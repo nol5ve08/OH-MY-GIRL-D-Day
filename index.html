@@ -246,6 +246,12 @@
       font-weight: 700;
     }
 
+    .month-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .calendar {
       padding: 14px;
     }
@@ -389,6 +395,59 @@
     .list {
       display: grid;
       gap: 10px;
+    }
+
+    .special-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .special-item {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .special-date {
+      border-radius: 8px;
+      background: #fff8e9;
+      color: #8c5908;
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .special-date small {
+      display: block;
+      font-size: 11px;
+      margin-top: 4px;
+      color: #9b6a17;
+    }
+
+    .special-copy {
+      min-width: 0;
+    }
+
+    .special-copy b {
+      display: block;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .special-copy span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
     }
 
     .list-item {
@@ -791,17 +850,17 @@
           <h2 id="monthTitle">2026년 6월</h2>
           <p>1회 수집된 멤버 생일과 노래 발매일을 날짜별로 보는 팬 캘린더</p>
         </div>
-        <div class="actions">
-          <button class="icon-button" id="prevMonth" title="이전 달" aria-label="이전 달">‹</button>
-          <button class="icon-button" id="nextMonth" title="다음 달" aria-label="다음 달">›</button>
-        </div>
       </header>
 
       <section class="dashboard">
         <section class="panel" aria-label="월간 캘린더">
           <div class="panel-head">
             <h3>월간 캘린더</h3>
-            <div class="month-nav">생일 + 발매일</div>
+            <div class="month-controls">
+              <button class="icon-button" id="prevMonth" title="이전 달" aria-label="이전 달">‹</button>
+              <div class="month-nav">생일 + 발매일</div>
+              <button class="icon-button" id="nextMonth" title="다음 달" aria-label="다음 달">›</button>
+            </div>
           </div>
           <div class="calendar">
             <div class="selected-detail" id="selectedDetail"></div>
@@ -816,6 +875,11 @@
           <section class="panel mini-panel">
             <h3>가장 가까운 일정</h3>
             <div class="today-card" id="nextEventCard"></div>
+          </section>
+
+          <section class="panel mini-panel">
+            <h3>다가올 특별한 일정</h3>
+            <div class="special-list" id="specialList"></div>
           </section>
 
           <section class="panel mini-panel">
@@ -865,6 +929,7 @@
       renderUpcoming();
       renderSelectedEvent();
       renderNextEvent();
+      renderSpecialEvents();
     }
 
     function monthEvents() {
@@ -927,6 +992,32 @@
       return collectedEvents
         .map(event => ({ ...event, next: nextOccurrence(event) }))
         .sort((a, b) => a.next.daysLeft - b.next.daysLeft || a.title.localeCompare(b.title, "ko"))[0];
+    }
+
+    function nextMilestone(event) {
+      const start = new Date(event.year, event.month - 1, event.day);
+      const currentDays = Math.max(0, daysBetween(start, today));
+      const nextHundred = Math.ceil((currentDays + 1) / 100) * 100;
+      const milestone = nextHundred % 1000 === 0 || nextHundred % 500 === 0
+        ? nextHundred
+        : nextHundred;
+      const date = new Date(start);
+      date.setDate(start.getDate() + milestone);
+
+      return {
+        date,
+        daysLeft: daysBetween(today, date),
+        event,
+        milestone
+      };
+    }
+
+    function specialEvents() {
+      return collectedEvents
+        .map(nextMilestone)
+        .filter(item => item.daysLeft >= 0)
+        .sort((a, b) => a.daysLeft - b.daysLeft || b.milestone - a.milestone)
+        .slice(0, 3);
     }
 
     function ddayLabel(daysLeft) {
@@ -1039,6 +1130,29 @@
       `;
     }
 
+    function renderSpecialEvents() {
+      const listEl = document.querySelector("#specialList");
+      const items = specialEvents();
+
+      if (!items.length) {
+        listEl.innerHTML = `<div class="empty">다가올 특별 일정이 없어요.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = items.map(item => `
+        <article class="special-item">
+          <div class="special-date">
+            ${item.date.getDate()}
+            <small>${item.date.getMonth() + 1}월</small>
+          </div>
+          <div class="special-copy">
+            <b>${item.event.title} ${item.milestone.toLocaleString("ko-KR")}일</b>
+            <span>${item.date.getFullYear()}년 ${item.date.getMonth() + 1}월 ${item.date.getDate()}일 · ${ddayLabel(item.daysLeft)}</span>
+          </div>
+        </article>
+      `).join("");
+    }
+
     document.querySelectorAll(".chip").forEach(button => {
       button.addEventListener("click", () => {
         document.querySelectorAll(".chip").forEach(chip => chip.classList.remove("active"));
@@ -1048,6 +1162,7 @@
         renderCalendar();
         renderUpcoming();
         renderSelectedEvent();
+        renderSpecialEvents();
       });
     });
 
@@ -1061,6 +1176,7 @@
       renderCalendar();
       renderUpcoming();
       renderSelectedEvent();
+      renderSpecialEvents();
     });
 
     document.querySelector("#nextMonth").addEventListener("click", () => {
@@ -1073,6 +1189,7 @@
       renderCalendar();
       renderUpcoming();
       renderSelectedEvent();
+      renderSpecialEvents();
     });
 
     loadEvents();
