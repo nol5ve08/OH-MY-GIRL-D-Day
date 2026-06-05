@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>미라클 캘린더</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #23232a;
+      --muted: #6b6f7b;
+      --line: #e5e8ee;
+      --paper: #ffffff;
+      --mist: #f5f7fb;
+      --pink: #ef5da8;
+      --mint: #31a98c;
+      --blue: #3678d8;
+      --gold: #b87510;
+      --violet: #7862d9;
+      --shadow: 0 18px 50px rgba(31, 35, 48, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, #fff 0%, #f6f8fc 48%, #eef5f2 100%);
+      min-height: 100vh;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: rgba(255, 255, 255, 0.78);
+      border-right: 1px solid var(--line);
+      padding: 28px 22px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: conic-gradient(from 200deg, var(--pink), #ffcf5a, var(--mint), var(--blue), var(--pink));
+      box-shadow: 0 10px 24px rgba(239, 93, 168, 0.24);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      height: 42px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #3b3d46;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .nav button.active {
+      background: #23232a;
+      color: #fff;
+      box-shadow: 0 12px 30px rgba(35, 35, 42, 0.16);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: 0.72;
+    }
+
+    .filters {
+      margin-top: auto;
+      display: grid;
+      gap: 10px;
+    }
+
+    .filters h2 {
+      margin: 0 0 4px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 999px;
+      height: 30px;
+      padding: 0 11px;
+      color: #484b55;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .chip.active {
+      border-color: transparent;
+      background: #eaf7f3;
+      color: #136b57;
+      font-weight: 700;
+    }
+
+    main {
+      padding: 28px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .title h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .icon-button,
+    .primary-button {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      height: 40px;
+      min-width: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(31, 35, 48, 0.06);
+    }
+
+    .primary-button {
+      padding: 0 14px;
+      background: #23232a;
+      color: #fff;
+      border-color: #23232a;
+      white-space: nowrap;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      height: 66px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .calendar {
+      padding: 14px;
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .weekdays span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0 8px;
+    }
+
+    .days {
+      margin-top: 8px;
+    }
+
+    .day {
+      min-height: 116px;
+      background: #fbfcfe;
+      border: 1px solid #ebedf2;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .day.dim {
+      background: #f5f6f9;
+      color: #a2a6b1;
+    }
+
+    .day.today {
+      outline: 2px solid rgba(49, 169, 140, 0.35);
+      background: #f5fffb;
+    }
+
+    .date {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .event {
+      border: 0;
+      border-radius: 6px;
+      padding: 6px 7px;
+      font-size: 12px;
+      line-height: 1.25;
+      color: #20232a;
+      background: #f0f2f6;
+      border-left: 4px solid #a5acba;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .event.birthday { background: #fff0f7; border-color: var(--pink); }
+    .event.release { background: #eef4ff; border-color: var(--blue); }
+    .event.anniversary { background: #fff8e9; border-color: var(--gold); }
+
+    .side-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .mini-panel {
+      padding: 18px;
+    }
+
+    .mini-panel h3 {
+      margin: 0 0 14px;
+      font-size: 17px;
+    }
+
+    .today-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      background: #23232a;
+      color: #fff;
+      border-radius: 8px;
+    }
+
+    .today-card strong {
+      font-size: 18px;
+    }
+
+    .today-card span {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+    }
+
+    .selected-detail {
+      margin-bottom: 12px;
+      border: 1px solid #dfe5ee;
+      background: #fbfcfe;
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .selected-detail h4 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .selected-detail p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .selected-detail strong {
+      min-width: 128px;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      color: #fff;
+      background: #23232a;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .list-item {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .date-pill {
+      border-radius: 8px;
+      background: var(--mist);
+      min-height: 48px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .date-pill small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+      font-weight: 800;
+    }
+
+    .item-title {
+      min-width: 0;
+    }
+
+    .item-title b {
+      display: block;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-title span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      background: var(--mist);
+      color: #555a65;
+      white-space: nowrap;
+    }
+
+    .tag.birthday { background: #fff0f7; color: #b22972; }
+    .tag.release { background: #eef4ff; color: #255fb2; }
+    .tag.anniversary { background: #fff8e9; color: #8c5908; }
+    .detail {
+      display: grid;
+      gap: 12px;
+    }
+
+    .detail-card {
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .detail-card h4 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .detail-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .d-day {
+      display: grid;
+      gap: 4px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #23232a;
+      color: #fff;
+    }
+
+    .d-day strong {
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .d-day span {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .meta {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px;
+      background: #fbfcfe;
+    }
+
+    .meta small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .meta b {
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .inbox {
+      display: grid;
+      gap: 10px;
+    }
+
+    .candidate {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .candidate-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .candidate b {
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .candidate p {
+      margin: 7px 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .candidate-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .small-button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      height: 32px;
+      padding: 0 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .small-button.approve {
+      background: #eaf7f3;
+      color: #126c58;
+      border-color: #ccece4;
+    }
+
+    .small-button.reject {
+      color: #7d4552;
+      background: #fff5f7;
+      border-color: #f4d9e1;
+    }
+
+    .empty {
+      padding: 18px;
+      border-radius: 8px;
+      background: var(--mist);
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 1080px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        align-items: start;
+        padding: 22px;
+      }
+
+      .filters {
+        margin-top: 0;
+        grid-column: 1 / -1;
+      }
+
+      .nav {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .nav button {
+        justify-content: center;
+        font-size: 14px;
+        padding: 0 8px;
+      }
+
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 18px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .sidebar {
+        grid-template-columns: 1fr;
+        padding: 18px;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .nav button {
+        height: 38px;
+        justify-content: flex-start;
+      }
+
+      .actions {
+        width: 100%;
+      }
+
+      .primary-button {
+        flex: 1;
+      }
+
+      .day {
+        min-height: 74px;
+        padding: 6px 4px;
+      }
+
+      .day.dim {
+        display: flex;
+      }
+
+      .selected-detail {
+        grid-template-columns: 1fr;
+      }
+
+      .selected-detail strong {
+        min-width: 0;
+        width: fit-content;
+      }
+
+      .weekdays,
+      .days {
+        gap: 4px;
+      }
+
+      .weekdays span {
+        padding: 0;
+        text-align: center;
+        font-size: 11px;
+      }
+
+      .date {
+        font-size: 12px;
+      }
+
+      .event {
+        border-left-width: 3px;
+        font-size: 10px;
+        padding: 4px;
+      }
+
+      .list-item {
+        grid-template-columns: 44px minmax(0, 1fr);
+      }
+
+      .list-item .tag {
+        grid-column: 2;
+        width: fit-content;
+      }
+    }
+
+    @media (max-width: 460px) {
+      main {
+        padding: 14px;
+      }
+
+      .panel-head {
+        height: auto;
+        min-height: 56px;
+        padding: 12px;
+      }
+
+      .panel-head h3 {
+        font-size: 16px;
+      }
+
+      .month-nav {
+        font-size: 12px;
+      }
+
+      .calendar {
+        padding: 8px;
+      }
+
+      .weekdays,
+      .days {
+        gap: 3px;
+      }
+
+      .day {
+        min-height: 54px;
+        border-radius: 6px;
+        padding: 4px 3px;
+      }
+
+      .date {
+        font-size: 11px;
+      }
+
+      .event {
+        max-width: 100%;
+        font-size: 9px;
+        padding: 3px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div>
+          <h1>미라클 캘린더</h1>
+          <p>오마이걸 팬 일정 보드</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="주요 보기">
+        <button class="active"><span class="dot"></span>캘린더</button>
+        <button><span class="dot"></span>생일 목록</button>
+        <button><span class="dot"></span>발매일 목록</button>
+        <button><span class="dot"></span>수집 기록</button>
+      </nav>
+
+      <section class="filters" aria-label="카테고리 필터">
+        <h2>카테고리</h2>
+        <div class="chips">
+          <button class="chip active" data-filter="all">전체</button>
+          <button class="chip" data-filter="birthday">생일</button>
+          <button class="chip" data-filter="release">발매</button>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="title">
+          <h2 id="monthTitle">2026년 6월</h2>
+          <p>1회 수집된 멤버 생일과 노래 발매일을 날짜별로 보는 팬 캘린더</p>
+        </div>
+        <div class="actions">
+          <button class="icon-button" id="prevMonth" title="이전 달" aria-label="이전 달">‹</button>
+          <button class="icon-button" id="nextMonth" title="다음 달" aria-label="다음 달">›</button>
+        </div>
+      </header>
+
+      <section class="dashboard">
+        <section class="panel" aria-label="월간 캘린더">
+          <div class="panel-head">
+            <h3>월간 캘린더</h3>
+            <div class="month-nav">생일 + 발매일</div>
+          </div>
+          <div class="calendar">
+            <div class="selected-detail" id="selectedDetail"></div>
+            <div class="weekdays">
+              <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span>
+            </div>
+            <div class="days" id="calendarDays"></div>
+          </div>
+        </section>
+
+        <aside class="side-stack">
+          <section class="panel mini-panel">
+            <h3>가장 가까운 일정</h3>
+            <div class="today-card" id="nextEventCard"></div>
+          </section>
+
+          <section class="panel mini-panel">
+            <h3>이번 달</h3>
+            <div class="list" id="upcomingList"></div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let rawEvents = [];
+    let collectedEvents = [];
+
+    const labels = {
+      birthday: "생일",
+      release: "발매"
+    };
+
+    let activeFilter = "all";
+    let selectedEventId = "arin-birthday";
+    let viewYear = 2026;
+    let viewMonth = 6;
+    const today = new Date();
+
+    function normalizeEvents(events) {
+      return events.map(event => {
+        const [year, month, day] = event.date.split("-").map(Number);
+        return { ...event, year, month, day };
+      });
+    }
+
+    async function loadEvents() {
+      try {
+        const response = await fetch("./events.json");
+        if (!response.ok) throw new Error("events.json을 불러오지 못했습니다.");
+        rawEvents = await response.json();
+      } catch (error) {
+        console.error(error);
+        rawEvents = [];
+      }
+
+      collectedEvents = normalizeEvents(rawEvents);
+      selectedEventId = visibleEvents()[0]?.id || collectedEvents[0]?.id || null;
+      renderCalendar();
+      renderUpcoming();
+      renderSelectedEvent();
+      renderNextEvent();
+    }
+
+    function monthEvents() {
+      return collectedEvents
+        .filter(event => event.month === viewMonth)
+        .sort((a, b) => a.day - b.day || a.title.localeCompare(b.title, "ko"));
+    }
+
+    function typeClass(type) {
+      return type || "anniversary";
+    }
+
+    function visibleEvents() {
+      const events = monthEvents();
+      return activeFilter === "all" ? events : events.filter(event => event.type === activeFilter);
+    }
+
+    function formatDate(event) {
+      return `${event.year}년 ${event.month}월 ${event.day}일`;
+    }
+
+    function daysBetween(start, end) {
+      const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+      const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+      return Math.floor((endUtc - startUtc) / 86400000);
+    }
+
+    function elapsedText(event) {
+      const start = new Date(event.year, event.month - 1, event.day);
+      const totalDays = daysBetween(start, today);
+      let years = today.getFullYear() - start.getFullYear();
+      const anniversary = new Date(today.getFullYear(), start.getMonth(), start.getDate());
+
+      if (today < anniversary) {
+        years -= 1;
+      }
+
+      const lastAnniversary = new Date(start.getFullYear() + years, start.getMonth(), start.getDate());
+      const extraDays = daysBetween(lastAnniversary, today);
+      return {
+        totalDays,
+        readable: `${years}년 ${extraDays}일`
+      };
+    }
+
+    function nextOccurrence(event) {
+      let nextDate = new Date(today.getFullYear(), event.month - 1, event.day);
+
+      if (nextDate < today) {
+        nextDate = new Date(today.getFullYear() + 1, event.month - 1, event.day);
+      }
+
+      return {
+        date: nextDate,
+        daysLeft: daysBetween(today, nextDate)
+      };
+    }
+
+    function nearestEvent() {
+      return collectedEvents
+        .map(event => ({ ...event, next: nextOccurrence(event) }))
+        .sort((a, b) => a.next.daysLeft - b.next.daysLeft || a.title.localeCompare(b.title, "ko"))[0];
+    }
+
+    function ddayLabel(daysLeft) {
+      if (daysLeft === 0) return "D-DAY";
+      return `D-${daysLeft}`;
+    }
+
+    function renderCalendar() {
+      const daysEl = document.querySelector("#calendarDays");
+      const monthTitle = document.querySelector("#monthTitle");
+      monthTitle.textContent = `${viewYear}년 ${viewMonth}월`;
+
+      const firstDay = new Date(viewYear, viewMonth - 1, 1);
+      const monthStartOffset = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+      const previousMonthDays = new Date(viewYear, viewMonth - 1, 0).getDate();
+      const cells = [];
+
+      for (let i = 0; i < monthStartOffset; i += 1) {
+        cells.push(`<div class="day dim"><div class="date">${previousMonthDays - monthStartOffset + i + 1}</div></div>`);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const dayEvents = visibleEvents().filter(event => event.day === day);
+        const eventMarkup = dayEvents.map(event => `
+          <button class="event ${typeClass(event.type)}" data-event-id="${event.id}" title="${event.title}">
+            ${event.short}
+          </button>
+        `).join("");
+
+        cells.push(`
+          <div class="day ${viewYear === 2026 && viewMonth === 6 && day === 6 ? "today" : ""}">
+            <div class="date"><span>${day}</span></div>
+            ${eventMarkup}
+          </div>
+        `);
+      }
+
+      while (cells.length % 7 !== 0) {
+        const nextDay = cells.length - monthStartOffset - daysInMonth + 1;
+        cells.push(`<div class="day dim"><div class="date">${nextDay}</div></div>`);
+      }
+
+      daysEl.innerHTML = cells.join("");
+
+      document.querySelectorAll(".event").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedEventId = button.dataset.eventId;
+          renderSelectedEvent();
+        });
+      });
+    }
+
+    function renderUpcoming() {
+      const listEl = document.querySelector("#upcomingList");
+      const upcoming = visibleEvents();
+
+      if (!upcoming.length) {
+        listEl.innerHTML = `<div class="empty">선택한 카테고리에 일정이 없어요.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = upcoming.map(event => `
+        <article class="list-item">
+          <div class="date-pill">${event.day}<small>${viewMonth}월</small></div>
+          <div class="item-title">
+            <b>${event.title}</b>
+            <span>${formatDate(event)}</span>
+          </div>
+          <span class="tag ${typeClass(event.type)}">${labels[event.type]}</span>
+        </article>
+      `).join("");
+    }
+
+    function renderSelectedEvent() {
+      const panelEl = document.querySelector("#selectedDetail");
+      const event = selectedEventId
+        ? collectedEvents.find(item => item.id === selectedEventId)
+        : visibleEvents()[0];
+
+      if (!event) {
+        panelEl.innerHTML = `
+          <div>
+            <h4>표시된 일정이 없어요</h4>
+            <p>다른 달로 넘기거나 필터를 바꿔보면 생일과 발매일을 볼 수 있어요.</p>
+          </div>
+          <strong>--</strong>
+        `;
+        return;
+      }
+
+      const elapsed = elapsedText(event);
+      const next = nextOccurrence(event);
+      panelEl.innerHTML = `
+        <div>
+          <h4>${event.title}</h4>
+          <p>${formatDate(event)} · ${labels[event.type]} · D+${elapsed.totalDays.toLocaleString("ko-KR")}일 (${elapsed.readable}) · 올해 기준 ${ddayLabel(next.daysLeft)}</p>
+        </div>
+        <strong>D+${elapsed.totalDays.toLocaleString("ko-KR")}</strong>
+      `;
+    }
+
+    function renderNextEvent() {
+      const cardEl = document.querySelector("#nextEventCard");
+      const event = nearestEvent();
+      const elapsed = elapsedText(event);
+      cardEl.innerHTML = `
+        <strong>${ddayLabel(event.next.daysLeft)} · ${event.title}</strong>
+        <span>${event.next.date.getFullYear()}년 ${event.next.date.getMonth() + 1}월 ${event.next.date.getDate()}일 예정 · 원 날짜 D+${elapsed.totalDays.toLocaleString("ko-KR")}일</span>
+      `;
+    }
+
+    document.querySelectorAll(".chip").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".chip").forEach(chip => chip.classList.remove("active"));
+        button.classList.add("active");
+        activeFilter = button.dataset.filter;
+        selectedEventId = visibleEvents()[0]?.id || null;
+        renderCalendar();
+        renderUpcoming();
+        renderSelectedEvent();
+      });
+    });
+
+    document.querySelector("#prevMonth").addEventListener("click", () => {
+      viewMonth -= 1;
+      if (viewMonth < 1) {
+        viewMonth = 12;
+        viewYear -= 1;
+      }
+      selectedEventId = visibleEvents()[0]?.id || null;
+      renderCalendar();
+      renderUpcoming();
+      renderSelectedEvent();
+    });
+
+    document.querySelector("#nextMonth").addEventListener("click", () => {
+      viewMonth += 1;
+      if (viewMonth > 12) {
+        viewMonth = 1;
+        viewYear += 1;
+      }
+      selectedEventId = visibleEvents()[0]?.id || null;
+      renderCalendar();
+      renderUpcoming();
+      renderSelectedEvent();
+    });
+
+    loadEvents();
+  </script>
+</body>
+</html>
