@@ -1140,7 +1140,7 @@
       const elapsed = elapsedText(event);
       cardEl.innerHTML = `
         <strong>${ddayLabel(event.next.daysLeft)} · ${event.title}</strong>
-        <span>${formatCalendarDate(event.next.date)} 예정 · 원 날짜 D+${elapsed.totalDays.toLocaleString("ko-KR")}일 · 오늘 날짜 기준</span>
+        <span>${formatCalendarDate(event.next.date)} 예정 · D+${elapsed.totalDays.toLocaleString("ko-KR")}일(오늘 날짜 기준)</span>
       `;
     }
 
